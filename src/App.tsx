@@ -37,6 +37,9 @@ export default function App() {
   );
   const [activeTab, setActiveTab] = useState<ActiveTab>('CATALOGUE');
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [pendingRoleSwitch, setPendingRoleSwitch] = useState<UserRole | null>(
+    null
+  );
 
   // Quick-launch state from Catalogue to Librarian Desk
   const [deskShortcut, setDeskShortcut] = useState<{
@@ -59,21 +62,20 @@ export default function App() {
   }, [loadSnapshot]);
 
   const handleRoleChange = (nextRole: UserRole) => {
-    setActiveRole(nextRole);
-    if (currentUser) {
-      const updatedUser: Profile = { ...currentUser, role: nextRole };
-      setCurrentUser(updatedUser);
-      libraryRepository.setActiveUser(updatedUser);
-    }
-    if (nextRole === 'STUDENT' && activeTab === 'DESK') {
-      setActiveTab('DASHBOARD');
-    }
+    if (nextRole === activeRole) return;
+    // Whenever anyone switches to a different role, open the form modal to fill in their details for that role
+    setPendingRoleSwitch(nextRole);
+    setAuthModalOpen(true);
   };
 
   const handleAuthSuccess = async (profile: Profile) => {
     setCurrentUser(profile);
     setActiveRole(profile.role);
+    setPendingRoleSwitch(null);
     setAuthModalOpen(false);
+    if (profile.role === 'STUDENT' && activeTab === 'DESK') {
+      setActiveTab('DASHBOARD');
+    }
     await loadSnapshot();
   };
 
@@ -215,11 +217,15 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Switch Account Modal when already signed in */}
+      {/* Switch Account / Role Verification Modal when already signed in */}
       <AuthModal
         isOpen={authModalOpen}
-        initialRole={activeRole}
-        onClose={() => setAuthModalOpen(false)}
+        initialRole={pendingRoleSwitch || activeRole}
+        startOnForm={Boolean(pendingRoleSwitch)}
+        onClose={() => {
+          setPendingRoleSwitch(null);
+          setAuthModalOpen(false);
+        }}
         onSuccess={handleAuthSuccess}
       />
     </div>

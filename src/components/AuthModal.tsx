@@ -30,6 +30,7 @@ interface AuthModalProps {
   isOpen?: boolean;
   fullPage?: boolean;
   initialRole?: UserRole;
+  startOnForm?: boolean;
   onClose?: () => void;
   onSuccess: (profile: Profile) => void;
 }
@@ -40,11 +41,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen = true,
   fullPage = false,
   initialRole = 'STUDENT',
+  startOnForm = false,
   onClose,
   onSuccess,
 }) => {
-  // First step asks the user whether they want to Login or Sign Up
-  const [step, setStep] = useState<'CHOOSE_ACTION' | 'FORM'>('CHOOSE_ACTION');
+  // First step asks the user whether they want to Login or Sign Up (unless startOnForm is true when switching roles)
+  const [step, setStep] = useState<'CHOOSE_ACTION' | 'FORM'>(
+    startOnForm ? 'FORM' : 'CHOOSE_ACTION'
+  );
   const [mode, setMode] = useState<'SIGN_IN' | 'SIGN_UP'>('SIGN_UP');
   const [role, setRole] = useState<UserRole>(initialRole);
   const [fullName, setFullName] = useState('');
@@ -56,6 +60,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Sync role and form step whenever modal opens or initialRole changes (e.g. Role Switcher)
+  React.useEffect(() => {
+    setRole(initialRole);
+    setError(null);
+    if (initialRole === 'STUDENT') {
+      setDepartment('Computer Science & Engineering');
+    } else {
+      setDepartment('Library & Administration');
+    }
+    if (startOnForm && isOpen) {
+      setStep('FORM');
+      setMode('SIGN_UP');
+      setFullName('');
+      setRollNo('');
+      setEmail('');
+      setPhone('+91 ');
+      setPassword('');
+    }
+  }, [initialRole, isOpen, startOnForm]);
 
   if (!fullPage && !isOpen) return null;
 
@@ -154,14 +178,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <h1 className="text-xl font-bold text-[#0F172A]">
             {step === 'CHOOSE_ACTION'
               ? 'Welcome to MIT Smart Library'
+              : startOnForm
+              ? `Switch Role to ${role} — Enter Details`
               : mode === 'SIGN_IN'
               ? 'Login to Your MIT Account'
               : 'Sign Up for MIT Library Access'}
           </h1>
           <p className="text-xs text-slate-600 mt-1">
-            Official library management portal for{' '}
-            <span className="font-mono font-semibold text-[#0284C7]">@mit.asia</span>{' '}
-            students, librarians, and administrators.
+            {startOnForm ? (
+              <>
+                Please fill in your{' '}
+                <span className="font-mono font-semibold text-[#0284C7]">{role}</span>{' '}
+                profile details (or switch to Login if already registered) to activate this role.
+              </>
+            ) : (
+              <>
+                Official library management portal for{' '}
+                <span className="font-mono font-semibold text-[#0284C7]">@mit.asia</span>{' '}
+                students, librarians, and administrators.
+              </>
+            )}
           </p>
         </div>
 

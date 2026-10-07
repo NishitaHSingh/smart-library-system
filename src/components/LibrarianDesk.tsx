@@ -26,6 +26,8 @@ import {
   Printer,
   Download,
   RefreshCw,
+  QrCode,
+  Camera,
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import {
@@ -38,6 +40,7 @@ import {
   Profile,
 } from '../types/database';
 import { calculateOverdueFine, libraryRepository } from '../lib/supabase';
+import { BookBarcodeScannerModal } from './BookBarcodeScannerModal';
 
 interface LibrarianDeskProps {
   profiles: Profile[];
@@ -65,6 +68,10 @@ export const LibrarianDesk: React.FC<LibrarianDeskProps> = ({
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [addBookModalOpen, setAddBookModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
+  const [barcodeScannerMode, setBarcodeScannerMode] = useState<
+    'AUTO' | 'ISSUE' | 'RETURN'
+  >('AUTO');
   const [editingCopy, setEditingCopy] = useState<{
     copy: BookCopy;
     book?: Book;
@@ -854,6 +861,18 @@ export const LibrarianDesk: React.FC<LibrarianDeskProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              setBarcodeScannerMode('AUTO');
+              setBarcodeScannerOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-sky-700 text-white text-xs sm:text-sm font-semibold transition-colors shadow-xs cursor-pointer"
+          >
+            <QrCode className="w-4 h-4" />
+            Scan Book QR / Barcode
+          </button>
+
           <button
             type="button"
             onClick={() => setReportModalOpen(true)}
@@ -2304,9 +2323,22 @@ export const LibrarianDesk: React.FC<LibrarianDeskProps> = ({
 
               {/* Physical Book Accession Number Input */}
               <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1">
-                  Physical Book Accession Number
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-[#0F172A]">
+                    Physical Book Accession Number
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBarcodeScannerMode('ISSUE');
+                      setBarcodeScannerOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0284C7] hover:underline cursor-pointer"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    Scan Book Barcode with Camera
+                  </button>
+                </div>
                 <div className="relative">
                   <Hash className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
@@ -2414,9 +2446,22 @@ export const LibrarianDesk: React.FC<LibrarianDeskProps> = ({
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1">
-                  Issued Book Accession Number
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-[#0F172A]">
+                    Issued Book Accession Number
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBarcodeScannerMode('RETURN');
+                      setBarcodeScannerOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0284C7] hover:underline cursor-pointer"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    Scan Book Barcode with Camera
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
@@ -2772,6 +2817,30 @@ export const LibrarianDesk: React.FC<LibrarianDeskProps> = ({
           </div>
         </div>
       )}
+      {/* =====================================================================
+          CAMERA QR & BOOK BARCODE SCANNER MODAL (ISSUE & RETURN IDENTIFICATION)
+      ===================================================================== */}
+      <BookBarcodeScannerModal
+        isOpen={barcodeScannerOpen}
+        initialMode={barcodeScannerMode}
+        books={books}
+        bookCopies={bookCopies}
+        borrowings={borrowings}
+        profiles={profiles}
+        onClose={() => setBarcodeScannerOpen(false)}
+        onSelectForIssue={(accessionNumber) => {
+          setIssueAccessionInput(accessionNumber);
+          setIssueError(null);
+          setBarcodeScannerOpen(false);
+          setIssueModalOpen(true);
+        }}
+        onSelectForReturn={(accessionNumber) => {
+          setReturnAccessionInput(accessionNumber);
+          setReturnError(null);
+          setBarcodeScannerOpen(false);
+          setReturnModalOpen(true);
+        }}
+      />
     </section>
   );
 };
