@@ -1,0 +1,6 @@
+{
+  "name": "MIT College Smart Library System",
+  "description": "Production-ready College Smart Library Management System for MIT College with real-time physical location tracking, librarian issue & return desk, student loan tracking, and analytics.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
